@@ -18,7 +18,7 @@ package core
 
 import (
 	"time"
-
+    "fmt"
 	"github.com/ethereum/go-ethereum/consensus"
 	"github.com/ethereum/go-ethereum/consensus/istanbul"
 	istanbulcommon "github.com/ethereum/go-ethereum/consensus/istanbul/common"
@@ -38,6 +38,7 @@ func (c *core) sendPreprepare(request *istanbul.Request) {
 			logger.Error("Failed to encode", "view", curView)
 			return
 		}
+		logger.Debug(fmt.Sprintf("=====> Broadcast preprepare, address: %v", c.Address()))
 		c.broadcast(&ibfttypes.Message{
 			Code: ibfttypes.MsgPreprepare,
 			Msg:  preprepare,
@@ -105,17 +106,20 @@ func (c *core) handlePreprepare(msg *ibfttypes.Message, src istanbul.Validator) 
 		if c.current.IsHashLocked() {
 			if preprepare.Proposal.Hash() == c.current.GetLockedHash() {
 				// Broadcast COMMIT and enters Prepared state directly
+				logger.Debug(fmt.Sprintf("=====> Prepared,  preprepare proposal == locked hash, address: %v, hash: %v", c.Address(), c.current.Proposal()))
 				c.acceptPreprepare(preprepare)
 				c.setState(ibfttypes.StatePrepared)
 				c.sendCommit()
 			} else {
 				// Send round change
+				logger.Info(fmt.Sprintf("====>Pre-prepare: proposed hash not matching current locked hash. round - %v, seq - %v", c.current.Round(), c.current.Sequence()))
 				c.sendNextRoundChange()
 			}
 		} else {
 			// Either
 			//   1. the locked proposal and the received proposal match
 			//   2. we have no locked proposal
+			logger.Debug(fmt.Sprintf("=====> Prepared, no locked proposal, address: %v", c.Address()))
 			c.acceptPreprepare(preprepare)
 			c.setState(ibfttypes.StatePreprepared)
 			c.sendPrepare()
