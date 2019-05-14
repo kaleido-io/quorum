@@ -895,6 +895,7 @@ func (pool *TxPool) addTxs(txs []*types.Transaction, local, sync bool) []error {
 		errs[nilSlot] = err
 		nilSlot++
 	}
+	log.Trace("Filtered transactions with errors", "count", len(errs))
 	// Reorg the pool internals if needed and return
 	done := pool.requestPromoteExecutables(dirtyAddrs)
 	if sync {
