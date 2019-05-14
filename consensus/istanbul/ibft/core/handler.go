@@ -17,6 +17,7 @@
 package core
 
 import (
+	"fmt"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/consensus/istanbul"
 	istanbulcommon "github.com/ethereum/go-ethereum/consensus/istanbul/common"
@@ -194,6 +195,7 @@ func (c *core) handleTimeoutMsg() {
 	if !c.waitingForRoundChange {
 		maxRound := c.roundChangeSet.MaxRound(c.valSet.F() + 1)
 		if maxRound != nil && maxRound.Cmp(c.current.Round()) > 0 {
+			c.logger.Info(fmt.Sprintf("=====>catching up to max round, calling sendRoundChange. max round - %v, current round - %v, seq - %v", maxRound, c.current.Round(), c.current.Sequence()))
 			c.sendRoundChange(maxRound)
 			return
 		}

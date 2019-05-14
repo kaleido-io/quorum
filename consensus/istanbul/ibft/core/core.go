@@ -22,7 +22,7 @@ import (
 	"math/big"
 	"sync"
 	"time"
-
+	"fmt"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/consensus/istanbul"
 	ibfttypes "github.com/ethereum/go-ethereum/consensus/istanbul/ibft/types"
@@ -264,6 +264,8 @@ func (c *core) startNewRound(round *big.Int) {
 			c.sendPreprepare(r)
 		} else if c.current.pendingRequest != nil {
 			c.sendPreprepare(c.current.pendingRequest)
+		} else {
+			logger.Info("=====> No locked proposal and pending request")
 		}
 	}
 	c.newRoundChangeTimer()
@@ -292,11 +294,14 @@ func (c *core) updateRoundState(view *istanbul.View, validatorSet istanbul.Valid
 	// Lock only if both roundChange is true and it is locked
 	if roundChange && c.current != nil {
 		if c.current.IsHashLocked() {
+			c.logger.Debug(fmt.Sprintf("=====> Setting new round state with locked hash: %v, and pending request", c.current.GetLockedHash()))
 			c.current = newRoundState(view, validatorSet, c.current.GetLockedHash(), c.current.Preprepare, c.current.pendingRequest, c.backend.HasBadProposal)
 		} else {
+			c.logger.Debug(fmt.Sprintf("=====> Setting new round state with pending request"))
 			c.current = newRoundState(view, validatorSet, common.Hash{}, nil, c.current.pendingRequest, c.backend.HasBadProposal)
 		}
 	} else {
+		c.logger.Debug(fmt.Sprintf("=====> Setting new round state with no pending request"))
 		c.current = newRoundState(view, validatorSet, common.Hash{}, nil, nil, c.backend.HasBadProposal)
 	}
 }
