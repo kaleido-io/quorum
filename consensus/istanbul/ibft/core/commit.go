@@ -18,7 +18,7 @@ package core
 
 import (
 	"reflect"
-
+	"fmt"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/consensus/istanbul"
 	istanbulcommon "github.com/ethereum/go-ethereum/consensus/istanbul/common"
@@ -35,6 +35,7 @@ func (c *core) sendCommitForOldBlock(view *istanbul.View, digest common.Hash) {
 		View:   view,
 		Digest: digest,
 	}
+	c.logger.Debug(fmt.Sprintf("=====> Sending commmit for old block, address: %v, hash: %v, block round: %v, block sequence: %v", c.Address(), digest, view.Round, view.Sequence))
 	c.broadcastCommit(sub)
 }
 
@@ -76,6 +77,7 @@ func (c *core) handleCommit(msg *ibfttypes.Message, src istanbul.Validator) erro
 	// by committing the proposal without PREPARE messages.
 	if c.current.Commits.Size() >= c.QuorumSize() && c.state.Cmp(ibfttypes.StateCommitted) < 0 {
 		// Still need to call LockHash here since state can skip Prepared state and jump directly to the Committed state.
+		c.logger.Debug(fmt.Sprintf("=====> Committing to a proposal and locking hash due to 2f+1 commits msgs, address: %v, hash: %v, state: %v", c.Address(), commit.Digest, c.state.String()))
 		c.current.LockHash()
 		c.commit()
 	}
