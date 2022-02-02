@@ -109,6 +109,12 @@ var AppHelpFlagGroups = []flags.FlagGroup{
 		},
 	},
 	{
+		Name: "DATABASE",
+		Flags: []cli.Flag{
+			utils.DatabaseHandles,
+		},
+	},
+	{
 		Name: "PERFORMANCE TUNING",
 		Flags: []cli.Flag{
 			utils.CacheFlag,

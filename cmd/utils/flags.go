@@ -363,6 +363,11 @@ var (
 		Usage: "Maximum amount of time non-executable transaction are queued",
 		Value: eth.DefaultConfig.TxPool.Lifetime,
 	}
+	// Database settings
+	DatabaseHandles = cli.IntFlag{
+		Name:  "dbhandles",
+		Usage: "Maximum file handles allocated to LevelDB",
+	}
 	// Performance tuning settings
 	CacheFlag = cli.IntFlag{
 		Name:  "cache",
@@ -1828,7 +1833,11 @@ func SetEthConfig(ctx *cli.Context, stack *node.Node, cfg *eth.Config) {
 	if ctx.GlobalIsSet(CacheFlag.Name) || ctx.GlobalIsSet(CacheDatabaseFlag.Name) {
 		cfg.DatabaseCache = ctx.GlobalInt(CacheFlag.Name) * ctx.GlobalInt(CacheDatabaseFlag.Name) / 100
 	}
-	cfg.DatabaseHandles = makeDatabaseHandles()
+	if ctx.GlobalIsSet(DatabaseHandles.Name) {
+		cfg.DatabaseHandles = ctx.GlobalInt(DatabaseHandles.Name)
+	} else {
+		cfg.DatabaseHandles = makeDatabaseHandles()
+	}
 	if ctx.GlobalIsSet(AncientFlag.Name) {
 		cfg.DatabaseFreezer = ctx.GlobalString(AncientFlag.Name)
 	}
@@ -2185,6 +2194,9 @@ func MakeChainDatabase(ctx *cli.Context, stack *node.Node) ethdb.Database {
 		err     error
 		chainDb ethdb.Database
 	)
+	if ctx.GlobalIsSet(DatabaseHandles.Name) {
+		handles = ctx.GlobalInt(DatabaseHandles.Name)
+	}
 	if ctx.GlobalString(SyncModeFlag.Name) == "light" {
 		name := "lightchaindata"
 		chainDb, err = stack.OpenDatabase(name, cache, handles, "")
