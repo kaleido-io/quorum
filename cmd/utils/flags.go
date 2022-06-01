@@ -434,6 +434,10 @@ var (
 		Name:  "cache.preimages",
 		Usage: "Enable recording the SHA3/keccak preimages of trie keys",
 	}
+	FDLimitFlag = cli.IntFlag{
+		Name:  "fdlimit",
+		Usage: "Raise the open file descriptor resource limit (default = system fd limit)",
+	}
 	// Miner settings
 	MiningEnabledFlag = cli.BoolFlag{
 		Name:  "mine",
@@ -1344,10 +1348,23 @@ func setLes(ctx *cli.Context, cfg *ethconfig.Config) {
 
 // MakeDatabaseHandles raises out the number of allowed file handles per process
 // for Geth and returns half of the allowance to assign to the database.
-func MakeDatabaseHandles() int {
+func MakeDatabaseHandles(max int) int {
 	limit, err := fdlimit.Maximum()
 	if err != nil {
 		Fatalf("Failed to retrieve file descriptor allowance: %v", err)
+	}
+	switch {
+	case max == 0:
+		// User didn't specify a meaningful value, use system limits
+	case max < 128:
+		// User specified something unhealthy, just use system defaults
+		log.Error("File descriptor limit invalid (<128)", "had", max, "updated", limit)
+	case max > limit:
+		// User requested more than the OS allows, notify that we can't allocate it
+		log.Warn("Requested file descriptors denied by OS", "req", max, "limit", limit)
+	default:
+		// User limit is meaningful and within allowed range, use that
+		limit = max
 	}
 	raised, err := fdlimit.Raise(uint64(limit))
 	if err != nil {
@@ -2024,7 +2041,7 @@ func SetEthConfig(ctx *cli.Context, stack *node.Node, cfg *ethconfig.Config) {
 	if ctx.GlobalIsSet(CacheFlag.Name) || ctx.GlobalIsSet(CacheDatabaseFlag.Name) {
 		cfg.DatabaseCache = ctx.GlobalInt(CacheFlag.Name) * ctx.GlobalInt(CacheDatabaseFlag.Name) / 100
 	}
-	cfg.DatabaseHandles = MakeDatabaseHandles()
+	cfg.DatabaseHandles = MakeDatabaseHandles(ctx.GlobalInt(utils.FDLimitFlag.name))
 	if ctx.GlobalIsSet(AncientFlag.Name) {
 		cfg.DatabaseFreezer = ctx.GlobalString(AncientFlag.Name)
 	}
@@ -2398,7 +2415,7 @@ func SplitTagsFlag(tagsFlag string) map[string]string {
 func MakeChainDatabase(ctx *cli.Context, stack *node.Node) ethdb.Database {
 	var (
 		cache   = ctx.GlobalInt(CacheFlag.Name) * ctx.GlobalInt(CacheDatabaseFlag.Name) / 100
-		handles = MakeDatabaseHandles()
+		handles = MakeDatabaseHandles(ctx.GlobalInt(utils.FDLimitFlag.Name))
 
 		err     error
 		chainDb ethdb.Database
