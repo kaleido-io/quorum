@@ -139,6 +139,7 @@ type NodeInfo struct {
 	Genesis    common.Hash         `json:"genesis"`    // SHA3 hash of the host's genesis block
 	Config     *params.ChainConfig `json:"config"`     // Chain configuration for the fork rules
 	Head       common.Hash         `json:"head"`       // Hex hash of the host's best owned block
+	Consensus  string              `json:"consensus"`  // Consensus mechanism in use
 }
 
 // nodeInfo retrieves some `eth` protocol metadata about the running host node.
@@ -150,6 +151,7 @@ func nodeInfo(chain *core.BlockChain, network uint64) *NodeInfo {
 		Genesis:    chain.Genesis().Hash(),
 		Config:     chain.Config(),
 		Head:       head.Hash(),
+		Consensus:  "raft",
 	}
 }
 
