@@ -414,7 +414,8 @@ func (e *Engine) Signers(header *types.Header) ([]common.Address, error) {
 		addr, err := istanbulcommon.GetSignatureAddress(proposalSeal, seal)
 		if err != nil {
 			// return nil, istanbulcommon.ErrInvalidSignature
-			log.Warn("IBFT: found invalid signature", "err", err)
+			log.Warn("IBFT: found & skipping invalid signature", "err", err)
+			continue
 		}
 		addrs = append(addrs, addr)
 	}
