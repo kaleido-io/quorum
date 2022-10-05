@@ -14,6 +14,7 @@ import (
 	"github.com/ethereum/go-ethereum/consensus/istanbul/validator"
 	"github.com/ethereum/go-ethereum/core/state"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/params"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/ethereum/go-ethereum/trie"
@@ -412,7 +413,8 @@ func (e *Engine) Signers(header *types.Header) ([]common.Address, error) {
 		// 2. Get the original address by seal and parent block hash
 		addr, err := istanbulcommon.GetSignatureAddress(proposalSeal, seal)
 		if err != nil {
-			return nil, istanbulcommon.ErrInvalidSignature
+			// return nil, istanbulcommon.ErrInvalidSignature
+			log.Warn("IBFT: found invalid signature", "err", err)
 		}
 		addrs = append(addrs, addr)
 	}
