@@ -18,6 +18,7 @@ package raft
 
 import (
 	"fmt"
+	"math/big"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -226,9 +227,9 @@ func throttle(rate time.Duration, f func()) func() {
 // This function spins continuously, blocking until a block should be created
 // (via requestMinting()). This is throttled by `minter.blockTime`:
 //
-//   1. A block is guaranteed to be minted within `blockTime` of being
-//      requested.
-//   2. We never mint a block more frequently than `blockTime`.
+//  1. A block is guaranteed to be minted within `blockTime` of being
+//     requested.
+//  2. We never mint a block more frequently than `blockTime`.
 func (minter *minter) mintingLoop() {
 	throttledMintNewBlock := throttle(minter.blockTime, func() {
 		if atomic.LoadInt32(&minter.minting) == 1 {
@@ -272,7 +273,7 @@ func (minter *minter) createWork() *work {
 	header := &types.Header{
 		ParentHash: parent.Hash(),
 		Number:     newBlockNumber,
-		Difficulty: ethash.CalcDifficulty(minter.config, uint64(tstamp), parent.Header()),
+		Difficulty: big.NewInt(1),
 		GasLimit:   minter.eth.calcGasLimitFunc(parent),
 		GasUsed:    0,
 		Coinbase:   coinbase,
