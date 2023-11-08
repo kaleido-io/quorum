@@ -23,6 +23,7 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"math/big"
 	"os"
 	"runtime"
 	"sync"
@@ -910,10 +911,21 @@ func (api *API) TraceCall(ctx context.Context, args ethapi.CallArgs, blockNrOrHa
 			Reexec:    config.Reexec,
 		}
 	}
-	res, err := api.traceTx(ctx, msg, new(txTraceContext), vmctx, statedb, privateStateDb, privateStateRepo, noTracerConfig) // test private with no config
-	if exeRes, ok := res.(*ethapi.ExecutionResult); ok && err == nil && len(exeRes.StructLogs) > 0 {                         // check there is a result
+
+	// create a mock private context
+	emptyTx := types.NewTransaction(
+		0,
+		common.Address{},
+		big.NewInt(0), 0, big.NewInt(0),
+		nil,
+	)
+	emptyTx.SetPrivate()
+	traceContext := &txTraceContext{tx: emptyTx}
+
+	res, err := api.traceTx(ctx, msg, traceContext, vmctx, statedb, privateStateDb, privateStateRepo, noTracerConfig) // test private with no config
+	if exeRes, ok := res.(*ethapi.ExecutionResult); ok && err == nil && len(exeRes.StructLogs) > 0 {                  // check there is a result
 		if config != nil && config.Tracer != nil { // re-run the private call with the custom JS tracer
-			return api.traceTx(ctx, msg, new(txTraceContext), vmctx, statedb, privateStateDb, privateStateRepo, traceConfig) // re-run with trace
+			return api.traceTx(ctx, msg, traceContext, vmctx, statedb, privateStateDb, privateStateRepo, traceConfig) // re-run with trace
 		}
 		return res, err // return private result with no tracer
 	} else if err == nil && !ok {
@@ -1041,7 +1053,7 @@ func (api *API) clearMessageDataIfNonParty(msg types.Message, psm *mps.PrivateSt
 	if msg.IsPrivate() {
 		_, managedParties, _, _, _ := private.P.Receive(common.BytesToEncryptedPayloadHash(msg.Data()))
 
-		if api.chainContext(nil).PrivateStateManager().NotIncludeAny(psm, managedParties...) {
+		if api.chainContext(context.TODO()).PrivateStateManager().NotIncludeAny(psm, managedParties...) {
 			return msg.WithEmptyPrivateData(true)
 		}
 	}
