@@ -81,6 +81,8 @@ var Defaults = Config{
 	TrieDirtyCache:          256,
 	TrieTimeout:             60 * time.Minute,
 	SnapshotCache:           102,
+	AllowForceUpdate:        false,
+	CommitThreshold:         128,
 	Miner: miner.Config{
 		GasFloor: params.DefaultMinGasLimit,
 		GasCeil:  params.GenesisGasLimit,
@@ -169,6 +171,8 @@ type Config struct {
 	TrieTimeout             time.Duration `toml:",omitempty"` // Cumulative Time interval spent on gc, after which to flush trie cache to disk
 	SnapshotCache           int
 	Preimages               bool
+	AllowForceUpdate        bool
+	CommitThreshold         int
 
 	// Mining options
 	Miner miner.Config

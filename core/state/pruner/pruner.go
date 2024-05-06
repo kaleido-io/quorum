@@ -90,7 +90,14 @@ func NewPruner(db ethdb.Database, datadir, trieCachePath string, bloomSize uint6
 	if headBlock == nil {
 		return nil, errors.New("Failed to load head block")
 	}
-	snaptree, err := snapshot.New(db, trie.NewDatabase(db), 256, headBlock.Root(), false, false, false)
+	snapConfig := snapshot.Config{
+		CacheSize:        256,
+		Recovery:         false,
+		ReBuild:          false,
+		AsyncBuild:       false,
+		AllowForceUpdate: false,
+	}
+	snaptree, err := snapshot.New(snapConfig, db, trie.NewDatabase(db), headBlock.Root())
 	if err != nil {
 		return nil, err // The relevant snapshot(s) might not exist
 	}
@@ -189,7 +196,7 @@ func prune(snaptree *snapshot.Tree, root common.Hash, maindb ethdb.Database, sta
 	// Pruning is done, now drop the "useless" layers from the snapshot.
 	// Firstly, flushing the target layer into the disk. After that all
 	// diff layers below the target will all be merged into the disk.
-	if err := snaptree.Cap(root, 0); err != nil {
+	if err := snaptree.Cap(root, 0, false); err != nil {
 		return err
 	}
 	// Secondly, flushing the snapshot journal into the disk. All diff
@@ -355,6 +362,14 @@ func RecoverPruning(datadir string, db ethdb.Database, trieCachePath string) err
 	if headBlock == nil {
 		return errors.New("Failed to load head block")
 	}
+
+	snapConfig := snapshot.Config{
+		CacheSize:        256,
+		Recovery:         true,
+		ReBuild:          false,
+		AsyncBuild:       false,
+		AllowForceUpdate: false,
+	}
 	// Initialize the snapshot tree in recovery mode to handle this special case:
 	// - Users run the `prune-state` command multiple times
 	// - Neither these `prune-state` running is finished(e.g. interrupted manually)
@@ -363,7 +378,7 @@ func RecoverPruning(datadir string, db ethdb.Database, trieCachePath string) err
 	// - The state HEAD is rewound already because of multiple incomplete `prune-state`
 	// In this case, even the state HEAD is not exactly matched with snapshot, it
 	// still feasible to recover the pruning correctly.
-	snaptree, err := snapshot.New(db, trie.NewDatabase(db), 256, headBlock.Root(), false, false, true)
+	snaptree, err := snapshot.New(snapConfig, db, trie.NewDatabase(db), headBlock.Root())
 	if err != nil {
 		return err // The relevant snapshot(s) might not exist
 	}
