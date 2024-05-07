@@ -133,8 +133,8 @@ type CacheConfig struct {
 	TrieTimeLimit       time.Duration // Time limit after which to flush the current in-memory trie to disk
 	SnapshotLimit       int           // Memory allowance (MB) to use for caching snapshot entries in memory
 	Preimages           bool          // Whether to store preimage of trie key to the disk
-	AllowForceUpdate    bool          // Enable to force snapshots based on commit counts
-	CommitThreshold     int           // Number of commits to force a root snapshot
+	AllowForceUpdate    bool          // Enable to force root snapshots based on the configured commits threshold
+	CommitThreshold     int           // Threshold of commits to force a root snapshot update
 
 	SnapshotWait bool // Wait for snapshot construction on startup. TODO(karalabe): This is a dirty hack for testing, nuke it
 }

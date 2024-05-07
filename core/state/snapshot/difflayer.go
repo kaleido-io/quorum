@@ -76,7 +76,7 @@ var (
 	bloomAccountHasherOffset  = 0
 	bloomStorageHasherOffset  = 0
 
-	// Count for number of commits before fore disk root update
+	// Count for number of commits before forcing disk root update
 	defaultCommitThreshold = 128
 )
 
