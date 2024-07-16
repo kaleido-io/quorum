@@ -2007,7 +2007,7 @@ func testSetHead(t *testing.T, tt *rewindTest, snapshots bool) {
 	if tt.commitBlock > 0 {
 		chain.stateCache.TrieDB().Commit(canonblocks[tt.commitBlock-1].Root(), true, nil)
 		if snapshots {
-			if err := chain.snaps.Cap(canonblocks[tt.commitBlock-1].Root(), 0); err != nil {
+			if err := chain.snaps.Cap(canonblocks[tt.commitBlock-1].Root(), 0, false); err != nil {
 				t.Fatalf("Failed to flatten snapshots: %v", err)
 			}
 		}

@@ -133,6 +133,8 @@ type CacheConfig struct {
 	TrieTimeLimit       time.Duration // Time limit after which to flush the current in-memory trie to disk
 	SnapshotLimit       int           // Memory allowance (MB) to use for caching snapshot entries in memory
 	Preimages           bool          // Whether to store preimage of trie key to the disk
+	AllowForceUpdate    bool          // Enable to force root snapshots based on the configured commits threshold
+	CommitThreshold     int           // Threshold of commits to force a root snapshot update
 
 	SnapshotWait bool // Wait for snapshot construction on startup. TODO(karalabe): This is a dirty hack for testing, nuke it
 }
@@ -140,11 +142,13 @@ type CacheConfig struct {
 // defaultCacheConfig are the default caching values if none are specified by the
 // user (also used during testing).
 var defaultCacheConfig = &CacheConfig{
-	TrieCleanLimit: 256,
-	TrieDirtyLimit: 256,
-	TrieTimeLimit:  5 * time.Minute,
-	SnapshotLimit:  256,
-	SnapshotWait:   true,
+	TrieCleanLimit:   256,
+	TrieDirtyLimit:   256,
+	TrieTimeLimit:    5 * time.Minute,
+	SnapshotLimit:    256,
+	SnapshotWait:     true,
+	AllowForceUpdate: false,
+	CommitThreshold:  128,
 }
 
 // BlockChain represents the canonical chain given a database with a genesis
@@ -403,7 +407,15 @@ func NewBlockChain(db ethdb.Database, cacheConfig *CacheConfig, chainConfig *par
 			log.Warn("Enabling snapshot recovery", "chainhead", head.NumberU64(), "diskbase", *layer)
 			recover = true
 		}
-		bc.snaps, err = snapshot.New(bc.db, bc.stateCache.TrieDB(), bc.cacheConfig.SnapshotLimit, head.Root(), !bc.cacheConfig.SnapshotWait, true, recover)
+		snapConfig := snapshot.Config{
+			CacheSize:        bc.cacheConfig.SnapshotLimit,
+			Recovery:         recover,
+			ReBuild:          true,
+			AsyncBuild:       !bc.cacheConfig.SnapshotWait,
+			AllowForceUpdate: bc.cacheConfig.AllowForceUpdate,
+			CommitThreshold:  bc.cacheConfig.CommitThreshold,
+		}
+		bc.snaps, err = snapshot.New(snapConfig, bc.db, bc.stateCache.TrieDB(), head.Root())
 		if err != nil {
 			log.Error("Error trying to load snapshot", "err", err)
 		}

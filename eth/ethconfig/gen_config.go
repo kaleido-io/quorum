@@ -49,23 +49,27 @@ func (c Config) MarshalTOML() (interface{}, error) {
 		TrieTimeout             time.Duration `toml:",omitempty"`
 		SnapshotCache           int
 		Preimages               bool
+		AllowForceUpdate        bool
+		CommitThreshold         int
 		Miner                   miner.Config
 		Ethash                  ethash.Config
 		TxPool                  core.TxPoolConfig
 		GPO                     gasprice.Config
 		EnablePreimageRecording bool
-		RaftMode                bool
-		EnableNodePermission    bool
-		Istanbul                istanbul.Config
 		DocRoot                 string `toml:"-"`
 		EWASMInterpreter        string
 		EVMInterpreter          string
-		RPCGasCap               uint64                         `toml:",omitempty"`
-		RPCTxFeeCap             float64                        `toml:",omitempty"`
+		RPCGasCap               uint64
+		RPCTxFeeCap             float64
 		Checkpoint              *params.TrustedCheckpoint      `toml:",omitempty"`
 		CheckpointOracle        *params.CheckpointOracleConfig `toml:",omitempty"`
 		OverrideBerlin          *big.Int                       `toml:",omitempty"`
+		RaftMode                bool
+		EnableNodePermission    bool
+		Istanbul                istanbul.Config
 		EVMCallTimeOut          time.Duration
+		QuorumLightServer       bool               `toml:",omitempty"`
+		QuorumLightClient       *QuorumLightClient `toml:",omitempty"`
 	}
 	var enc Config
 	enc.Genesis = c.Genesis
@@ -98,14 +102,13 @@ func (c Config) MarshalTOML() (interface{}, error) {
 	enc.TrieTimeout = c.TrieTimeout
 	enc.SnapshotCache = c.SnapshotCache
 	enc.Preimages = c.Preimages
+	enc.AllowForceUpdate = c.AllowForceUpdate
+	enc.CommitThreshold = c.CommitThreshold
 	enc.Miner = c.Miner
 	enc.Ethash = c.Ethash
 	enc.TxPool = c.TxPool
 	enc.GPO = c.GPO
 	enc.EnablePreimageRecording = c.EnablePreimageRecording
-	enc.RaftMode = c.RaftMode
-	enc.EnableNodePermission = c.EnableNodePermission
-	enc.Istanbul = c.Istanbul
 	enc.DocRoot = c.DocRoot
 	enc.EWASMInterpreter = c.EWASMInterpreter
 	enc.EVMInterpreter = c.EVMInterpreter
@@ -114,7 +117,12 @@ func (c Config) MarshalTOML() (interface{}, error) {
 	enc.Checkpoint = c.Checkpoint
 	enc.CheckpointOracle = c.CheckpointOracle
 	enc.OverrideBerlin = c.OverrideBerlin
+	enc.RaftMode = c.RaftMode
+	enc.EnableNodePermission = c.EnableNodePermission
+	enc.Istanbul = c.Istanbul
 	enc.EVMCallTimeOut = c.EVMCallTimeOut
+	enc.QuorumLightServer = c.QuorumLightServer
+	enc.QuorumLightClient = c.QuorumLightClient
 	return &enc, nil
 }
 
@@ -151,23 +159,27 @@ func (c *Config) UnmarshalTOML(unmarshal func(interface{}) error) error {
 		TrieTimeout             *time.Duration `toml:",omitempty"`
 		SnapshotCache           *int
 		Preimages               *bool
+		AllowForceUpdate        *bool
+		CommitThreshold         *int
 		Miner                   *miner.Config
 		Ethash                  *ethash.Config
 		TxPool                  *core.TxPoolConfig
 		GPO                     *gasprice.Config
 		EnablePreimageRecording *bool
-		RaftMode                *bool
-		EnableNodePermission    *bool
-		Istanbul                *istanbul.Config
 		DocRoot                 *string `toml:"-"`
 		EWASMInterpreter        *string
 		EVMInterpreter          *string
-		RPCGasCap               *uint64                        `toml:",omitempty"`
-		RPCTxFeeCap             *float64                       `toml:",omitempty"`
+		RPCGasCap               *uint64
+		RPCTxFeeCap             *float64
 		Checkpoint              *params.TrustedCheckpoint      `toml:",omitempty"`
 		CheckpointOracle        *params.CheckpointOracleConfig `toml:",omitempty"`
 		OverrideBerlin          *big.Int                       `toml:",omitempty"`
+		RaftMode                *bool
+		EnableNodePermission    *bool
+		Istanbul                *istanbul.Config
 		EVMCallTimeOut          *time.Duration
+		QuorumLightServer       *bool              `toml:",omitempty"`
+		QuorumLightClient       *QuorumLightClient `toml:",omitempty"`
 	}
 	var dec Config
 	if err := unmarshal(&dec); err != nil {
@@ -263,6 +275,12 @@ func (c *Config) UnmarshalTOML(unmarshal func(interface{}) error) error {
 	if dec.Preimages != nil {
 		c.Preimages = *dec.Preimages
 	}
+	if dec.AllowForceUpdate != nil {
+		c.AllowForceUpdate = *dec.AllowForceUpdate
+	}
+	if dec.CommitThreshold != nil {
+		c.CommitThreshold = *dec.CommitThreshold
+	}
 	if dec.Miner != nil {
 		c.Miner = *dec.Miner
 	}
@@ -277,15 +295,6 @@ func (c *Config) UnmarshalTOML(unmarshal func(interface{}) error) error {
 	}
 	if dec.EnablePreimageRecording != nil {
 		c.EnablePreimageRecording = *dec.EnablePreimageRecording
-	}
-	if dec.RaftMode != nil {
-		c.RaftMode = *dec.RaftMode
-	}
-	if dec.EnableNodePermission != nil {
-		c.EnableNodePermission = *dec.EnableNodePermission
-	}
-	if dec.Istanbul != nil {
-		c.Istanbul = *dec.Istanbul
 	}
 	if dec.DocRoot != nil {
 		c.DocRoot = *dec.DocRoot
@@ -311,8 +320,23 @@ func (c *Config) UnmarshalTOML(unmarshal func(interface{}) error) error {
 	if dec.OverrideBerlin != nil {
 		c.OverrideBerlin = dec.OverrideBerlin
 	}
+	if dec.RaftMode != nil {
+		c.RaftMode = *dec.RaftMode
+	}
+	if dec.EnableNodePermission != nil {
+		c.EnableNodePermission = *dec.EnableNodePermission
+	}
+	if dec.Istanbul != nil {
+		c.Istanbul = *dec.Istanbul
+	}
 	if dec.EVMCallTimeOut != nil {
 		c.EVMCallTimeOut = *dec.EVMCallTimeOut
+	}
+	if dec.QuorumLightServer != nil {
+		c.QuorumLightServer = *dec.QuorumLightServer
+	}
+	if dec.QuorumLightClient != nil {
+		c.QuorumLightClient = dec.QuorumLightClient
 	}
 	return nil
 }

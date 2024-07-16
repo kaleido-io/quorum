@@ -194,7 +194,14 @@ func verifyState(ctx *cli.Context) error {
 		log.Error("Failed to load head block")
 		return errors.New("no head block")
 	}
-	snaptree, err := snapshot.New(chaindb, trie.NewDatabase(chaindb), 256, headBlock.Root(), false, false, false)
+	snapConfig := snapshot.Config{
+		CacheSize:        256,
+		Recovery:         false,
+		ReBuild:          false,
+		AsyncBuild:       false,
+		AllowForceUpdate: false,
+	}
+	snaptree, err := snapshot.New(snapConfig, chaindb, trie.NewDatabase(chaindb), headBlock.Root())
 	if err != nil {
 		log.Error("Failed to open snapshot tree", "err", err)
 		return err

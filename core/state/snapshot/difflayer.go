@@ -75,6 +75,9 @@ var (
 	bloomDestructHasherOffset = 0
 	bloomAccountHasherOffset  = 0
 	bloomStorageHasherOffset  = 0
+
+	// Count for number of commits before forcing disk root update
+	defaultCommitThreshold = 128
 )
 
 func init() {
