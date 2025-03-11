@@ -18,6 +18,7 @@ package raft
 
 import (
 	"fmt"
+	"math/big"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -272,7 +273,7 @@ func (minter *minter) createWork() *work {
 	header := &types.Header{
 		ParentHash: parent.Hash(),
 		Number:     newBlockNumber,
-		Difficulty: ethash.CalcDifficulty(minter.config, uint64(tstamp), parent.Header()),
+		Difficulty: big.NewInt(1),
 		GasLimit:   minter.eth.calcGasLimitFunc(parent),
 		GasUsed:    0,
 		Coinbase:   coinbase,
